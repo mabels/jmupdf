@@ -1,0 +1,63 @@
+# --------------------------------------------------------------
+# MakeJNI1
+# --------------------------------------------------------------
+# 
+# GNU Makefile for JNI code
+#
+# Set some defaults needed in order to create native binaries
+# --------------------------------------------------------------
+
+# --------------------------------------------------------------
+# Make sure to define variables at project level. 
+# In Eclipse Juno its: 
+#          Project->Properties->C/C++ Build->Environment
+# Add the following variables:
+#          1. BIT = -m64 or -m32
+#          2. BUILD = release or debug
+#          3. CC = gcc   (If not already defined)
+# --------------------------------------------------------------
+
+ifndef CC
+CC := gcc
+endif
+
+ifdef BIT
+CC := $(CC) $(BIT)
+endif
+
+OS      := $(shell uname)
+prefix  := build
+OUT 	:= $(prefix)/$(build)
+verbose := "Y"
+
+#
+# --- Windows
+#
+ifeq "$(findstring MINGW,$(OS))" "MINGW"
+CFLAGS  += -std=c99
+endif
+
+#
+# --- Linux 
+#
+ifeq ($(OS), Linux)
+LIBS += -lpthread
+CFLAGS += -fPIC -std=c99 -D_POSIX_C_SOURCE
+endif
+
+#
+# --- Mac 
+#
+ifeq ($(OS), Darwin)
+LIBS += -lpthread
+CFLAGS += -fPIC -std=c99
+endif
+
+#
+# --- Omit symbol information on release version
+#
+ifeq "$(build)" "release"
+ifneq "$(OS)" "Darwin"
+CC += -s 
+endif
+endif

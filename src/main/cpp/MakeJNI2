@@ -1,0 +1,77 @@
+# --------------------------------------------------------------
+# MakeJNI2
+# --------------------------------------------------------------
+# 
+# GNU Makefile for JNI code
+# --------------------------------------------------------------
+
+JNI_DIR      := $(wildcard jni*)
+JNI_SRC      := $(notdir $(wildcard $(JNI_DIR)/*.c))
+JNI_DLL      := ""
+JNI_CMD      := ""
+
+#
+# --- Determine if 64BIT compile
+#
+ifdef BIT
+ifeq ($(BIT), -m64)
+64BIT := 1
+endif
+else
+ARCH := $(shell uname -m)
+ifeq ($(ARCH), x86_64)
+64BIT := 1
+else ifeq ($(ARCH), i686)
+64BIT := 1
+endif
+endif
+
+#
+# --- Windows
+#
+ifeq "$(findstring MINGW,$(OS))" "MINGW"
+ifdef 64BIT
+JNI_DLL := $(OUT)/jmupdf64.dll
+else
+JNI_DLL := $(OUT)/jmupdf32.dll
+endif
+JNI_CMD := $(BIT) -Wl,-export-all,-kill-at -shared
+endif
+
+#
+# --- Linux 
+#
+ifeq ($(OS), Linux)
+ifdef 64BIT
+JNI_DLL := $(OUT)/libjmupdf64.so
+else
+JNI_DLL := $(OUT)/libjmupdf32.so
+endif
+JNI_CMD := -shared
+endif
+
+#
+# --- Mac
+#
+ifeq ($(OS), Darwin)
+ifdef 64BIT
+JNI_DLL := $(OUT)/libjmupdf64.jnilib
+else
+JNI_DLL := $(OUT)/libjmupdf32.jnilib
+endif
+JNI_CMD := -shared
+endif
+
+#
+# --- Compile rules
+#
+$(OUT)/%.o : $(JNI_DIR)/%.c | $(OUT)
+	$(CC_CMD) -D_JNI_IMPLEMENTATION
+
+#
+# --- Link rules
+#
+$(JNI_DLL) : $(FITZ_LIB) $(THIRD_LIBS)
+$(JNI_DLL) : $(addprefix $(OUT)/, $(JNI_SRC:%.c=%.o))	
+	$(LINK_CMD) $(JNI_CMD)
+
